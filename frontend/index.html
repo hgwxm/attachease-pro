@@ -29,7 +29,7 @@
     // 必须登录才能访问
     if (!auth.requireAuth()) throw new Error('redirect');
 
-    const CATEGORIES = ['全部', '数码', '家居', '服饰', '图书', '运动', '其他'];
+    const CATEGORIES = ['全部', '数码', '家居', '服饰', '图书', '运动', '日常用品', '购物卡', '其他'];
     let currentCategory = getQuery('category') || '全部';
     let currentSearch = getQuery('search') || '';
 

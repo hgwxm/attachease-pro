@@ -43,6 +43,14 @@ router.get('/', (req, res) => {
   res.json(products);
 });
 
+// 我发布的商品（需登录）
+router.get('/mine', (req, res) => {
+  const user = getCurrentUser(req);
+  if (!user) return res.status(401).json({ error: '请先登录' });
+  const products = readProducts().filter(p => p.sellerId === user.id).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(products);
+});
+
 // 商品详情
 router.get('/:id', (req, res) => {
   const product = readProducts().find(p => p.id === parseInt(req.params.id));

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>待审核 - AttachEase Pro 管理后台</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div class="container">
+    <div class="flex-between mb-16">
+      <h2>📋 待审核商品</h2>
+      <a href="admin.html" class="btn btn-outline">← 返回管理后台</a>
+    </div>
+    <div id="stats" class="mb-16" style="color:var(--text-secondary);font-size:14px"></div>
+    <div id="batchBar" class="mb-16 flex gap-8 hidden">
+      <button class="btn btn-success" onclick="batchAudit('approved')">✓ 全部通过</button>
+      <button class="btn btn-danger" onclick="batchAudit('rejected')">✕ 全部拒绝</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>ID</th><th>标题</th><th>价格</th><th>分类</th><th>成色</th><th>卖家</th><th>发布时间</th><th>操作</th></tr></thead>
+        <tbody id="reviewTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    if (!auth.requireAuth()) throw new Error('redirect');
+    if (!auth.requireAdmin()) throw new Error('redirect');
+    $('#app').innerHTML = renderNavbar();
+
+    let pendingList = [];
+
+    async function load() {
+      try {
+        const list = await API.adminProducts();
+        pendingList = list.filter(p => p.status === 'pending');
+        $('#stats').textContent = `共 ${pendingList.length} 件待审核商品`;
+        $('#batchBar').classList.toggle('hidden', pendingList.length === 0);
+        $('#reviewTable').innerHTML = pendingList.length
+          ? pendingList.map(p => `
+            <tr>
+              <td>${p.id}</td>
+              <td>${escapeHtml(p.title)}</td>
+              <td style="color:var(--danger);font-weight:600">${formatPrice(p.price)}</td>
+              <td>${escapeHtml(p.category)}</td>
+              <td>${escapeHtml(p.condition)}</td>
+              <td>${escapeHtml(p.sellerName)}</td>
+              <td>${formatTime(p.createdAt)}</td>
+              <td>
+                <button class="btn btn-success" style="padding:4px 10px" onclick="audit(${p.id},'approved')">通过</button>
+                <button class="btn btn-danger" style="padding:4px 10px" onclick="audit(${p.id},'rejected')">拒绝</button>
+              </td>
+            </tr>`).join('')
+          : '<tr><td colspan="8" style="padding:48px;text-align:center;color:var(--text-tertiary)">🎉 没有待审核商品，全部已处理</td></tr>';
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function audit(id, status) {
+      try {
+        await API.updateProduct(id, { status });
+        toast(status === 'approved' ? '已通过审核' : '已拒绝', 'success');
+        load();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function batchAudit(status) {
+      if (!confirm(status === 'approved' ? `确认全部通过 ${pendingList.length} 件商品？` : `确认全部拒绝 ${pendingList.length} 件商品？`)) return;
+      try {
+        for (const p of pendingList) {
+          await API.updateProduct(p.id, { status });
+        }
+        toast(`已${status === 'approved' ? '通过' : '拒绝'} ${pendingList.length} 件商品`, 'success');
+        load();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    load();
+  </script>
+</body>
+</html>

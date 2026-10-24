@@ -37,6 +37,9 @@ const API = {
   buyProduct(id) {
     return this.request('/products/' + id + '/buy', { method: 'POST' });
   },
+  myProducts() {
+    return this.request('/products/mine');
+  },
 
   // 管理员
   adminProducts() {

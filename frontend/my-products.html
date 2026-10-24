@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我发布的 - AttachEase Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div class="container">
+    <div class="flex-between mb-16">
+      <h2>我发布的</h2>
+      <a href="publish.html" class="btn btn-primary">+ 发布新品</a>
+    </div>
+    <div id="stats" class="mb-16"></div>
+    <div class="product-grid" id="productGrid"></div>
+  </div>
+  <div id="tabbar"></div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    if (!auth.requireAuth()) throw new Error('redirect');
+    $('#app').innerHTML = renderNavbar();
+    $('#tabbar').innerHTML = renderTabbar('me');
+
+    function statusLabel(p) {
+      if (p.sold) return { text: '已售出', cls: 'status-sold' };
+      return { text: ({pending:'待审核',approved:'已通过',rejected:'已拒绝'}[p.status]||p.status), cls: 'status-' + p.status };
+    }
+
+    function myProductCard(p) {
+      const s = statusLabel(p);
+      return `<div class="product-card" onclick="location.href='product.html?id=${p.id}'">
+        <span class="my-card-status ${s.cls}">${s.text}</span>
+        <img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" onerror="this.src='https://picsum.photos/seed/${p.id}/600/450'">
+        <div class="product-card-body">
+          <div class="product-card-title">${escapeHtml(p.title)}</div>
+          <div class="product-card-price">${formatPrice(p.price)}</div>
+          <div class="product-card-meta"><span>${escapeHtml(p.category)} · ${escapeHtml(p.condition)}</span><span>${formatTime(p.createdAt)}</span></div>
+        </div>
+      </div>`;
+    }
+
+    async function load() {
+      try {
+        const list = await API.myProducts();
+        const pending = list.filter(p => p.status === 'pending').length;
+        const sold = list.filter(p => p.sold).length;
+        const approved = list.filter(p => p.status === 'approved' && !p.sold).length;
+        const rejected = list.filter(p => p.status === 'rejected').length;
+        $('#stats').innerHTML = list.length
+          ? `<span class="status-badge status-approved">已通过 ${approved}</span> <span class="status-badge status-pending">待审核 ${pending}</span> <span class="status-badge status-rejected">已拒绝 ${rejected}</span> <span class="status-badge status-sold">已售出 ${sold}</span>`
+          : '';
+        $('#productGrid').innerHTML = list.length
+          ? list.map(myProductCard).join('')
+          : '<div class="empty"><div class="empty-icon">📦</div>你还没有发布过商品<br><a href="publish.html">去发布第一件 →</a></div>';
+      } catch (err) { toast(err.message, 'error'); }
+    }
+    load();
+  </script>
+</body>
+</html>

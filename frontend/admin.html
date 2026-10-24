@@ -17,6 +17,7 @@
     <div id="productsPanel">
       <div class="flex-between mb-16">
         <span id="productStats"></span>
+        <a href="admin-review.html" class="btn btn-outline" id="reviewLink" style="padding:6px 16px">待审核商品</a>
       </div>
       <div style="overflow-x:auto">
         <table>
@@ -58,6 +59,7 @@
         const pending = list.filter(p => p.status === 'pending').length;
         const sold = list.filter(p => p.sold).length;
         $('#productStats').textContent = `共 ${list.length} 件 · 待审核 ${pending} · 已售出 ${sold}`;
+        $('#reviewLink').textContent = pending > 0 ? `待审核商品 (${pending})` : '待审核商品';
         $('#productsTable').innerHTML = list.map(p => `
           <tr>
             <td>${p.id}</td>

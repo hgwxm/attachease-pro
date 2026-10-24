@@ -54,7 +54,7 @@ function productCard(p) {
 function renderNavbar() {
   const user = auth.getUser();
   const links = user
-    ? `<a href="publish.html">发布二手</a>${user.role === 'admin' ? '<a href="admin.html">管理后台</a>' : ''}<button onclick="auth.logout()">退出 (${escapeHtml(user.name)})</button>`
+    ? `<a href="my-products.html">我发布的</a><a href="publish.html">发布二手</a>${user.role === 'admin' ? '<a href="admin.html">管理后台</a>' : ''}<button onclick="auth.logout()">退出 (${escapeHtml(user.name)})</button>`
     : '<a href="login.html">登录</a>';
   return `<nav class="navbar"><div class="navbar-inner">
     <a href="index.html" class="navbar-logo">AttachEase Pro</a>
@@ -68,7 +68,7 @@ function renderTabbar(active) {
   const tabs = [
     { href: 'index.html', icon: '🏠', label: '首页', key: 'home' },
     { href: 'publish.html', icon: '➕', label: '发布', key: 'publish' },
-    { href: 'login.html', icon: '👤', label: '我的', key: 'me' }
+    { href: 'my-products.html', icon: '👤', label: '我的', key: 'me' }
   ];
   return `<div class="mobile-tabbar">${tabs.map(t => `<a href="${t.href}" class="${active === t.key ? 'active' : ''}"><span>${t.icon}</span><span>${t.label}</span></a>`).join('')}</div>`;
 }
