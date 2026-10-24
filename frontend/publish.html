@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>发布二手 - AttachEase Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div class="container" style="max-width:600px">
+    <h2 class="mb-16">发布二手商品</h2>
+    <form onsubmit="return submitForm(event)">
+      <div class="form-group">
+        <label class="form-label">商品标题 *</label>
+        <input class="form-input" id="title" placeholder="如：iPhone 14 Pro 256G 暗紫色" maxlength="50">
+      </div>
+      <div class="form-group">
+        <label class="form-label">价格（元）*</label>
+        <input class="form-input" id="price" type="number" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">分类</label>
+        <select class="form-select" id="category">
+          <option>数码</option><option>家居</option><option>服饰</option><option>图书</option><option>运动</option><option>其他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">成色</label>
+        <select class="form-select" id="condition">
+          <option>全新</option><option>9成新</option><option>8成新</option><option>7成新</option><option>有瑕疵</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">图片 URL（可选）</label>
+        <input class="form-input" id="image" placeholder="粘贴图片链接，留空将自动生成占位图">
+      </div>
+      <div class="form-group">
+        <label class="form-label">详细描述</label>
+        <textarea class="form-textarea" id="description" placeholder="描述商品的品牌、使用时长、瑕疵等..."></textarea>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" type="submit" id="submitBtn">发布商品</button>
+      <p class="form-error text-center" id="errorMsg"></p>
+    </form>
+  </div>
+  <div id="tabbar"></div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    if (!auth.requireAuth()) throw new Error('redirect');
+    $('#app').innerHTML = renderNavbar();
+    $('#tabbar').innerHTML = renderTabbar('publish');
+
+    async function submitForm(e) {
+      e.preventDefault();
+      const data = {
+        title: $('#title').value.trim(),
+        price: $('#price').value,
+        category: $('#category').value,
+        condition: $('#condition').value,
+        image: $('#image').value.trim(),
+        description: $('#description').value.trim()
+      };
+      if (!data.title || !data.price) {
+        toast('请填写标题和价格', 'error');
+        return false;
+      }
+      $('#submitBtn').disabled = true;
+      $('#submitBtn').textContent = '发布中...';
+      try {
+        await API.createProduct(data);
+        toast('发布成功，等待管理员审核', 'success');
+        setTimeout(() => location.href = 'index.html', 1200);
+      } catch (err) {
+        toast(err.message, 'error');
+        $('#submitBtn').disabled = false;
+        $('#submitBtn').textContent = '发布商品';
+      }
+      return false;
+    }
+  </script>
+</body>
+</html>

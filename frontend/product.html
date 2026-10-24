@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品详情 - AttachEase Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="detail"></div>
+  <div id="tabbar"></div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    if (!auth.requireAuth()) throw new Error('redirect');
+    $('#app').innerHTML = renderNavbar();
+    $('#tabbar').innerHTML = renderTabbar('');
+
+    async function loadDetail() {
+      const id = getQuery('id');
+      if (!id) { $('#detail').innerHTML = '<div class="empty">商品不存在</div>'; return; }
+      try {
+        const p = await API.getProduct(id);
+        const user = auth.getUser();
+        const isSeller = user && p.sellerId === user.id;
+        $('#detail').innerHTML = `
+          <div class="detail-page">
+            <img class="detail-image" src="${escapeHtml(p.image)}" onerror="this.src='https://picsum.photos/seed/${p.id}/600/450'">
+            <div class="detail-info">
+              <h1>${escapeHtml(p.title)}</h1>
+              <div class="detail-price">${formatPrice(p.price)}</div>
+              <div class="detail-meta">
+                <span>${escapeHtml(p.category)}</span>
+                <span>${escapeHtml(p.condition)}</span>
+                <span>${formatTime(p.createdAt)}</span>
+              </div>
+              <div class="detail-desc">${escapeHtml(p.description || '暂无描述')}</div>
+              <div class="detail-seller">
+                <div class="detail-seller-avatar">${escapeHtml(p.sellerName.charAt(0))}</div>
+                <div>
+                  <div style="font-weight:500">${escapeHtml(p.sellerName)}</div>
+                  <div style="font-size:12px;color:var(--text-tertiary)">卖家</div>
+                </div>
+              </div>
+              ${p.sold
+                ? '<button class="btn btn-outline btn-block btn-lg" disabled>已售出</button>'
+                : isSeller
+                  ? '<button class="btn btn-outline btn-block btn-lg" disabled>这是你的商品</button>'
+                  : '<button class="btn btn-primary btn-block btn-lg" onclick="buy()">立即购买（担保交易）</button>'
+              }
+            </div>
+          </div>`;
+      } catch (err) {
+        $('#detail').innerHTML = `<div class="empty"><div class="empty-icon">😕</div>${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    async function buy() {
+      if (!confirm('确认购买该商品？将进入担保交易流程。')) return;
+      try {
+        const res = await API.buyProduct(getQuery('id'));
+        toast(res.message || '购买成功', 'success');
+        setTimeout(() => location.href = 'index.html', 1500);
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    loadDetail();
+  </script>
+</body>
+</html>

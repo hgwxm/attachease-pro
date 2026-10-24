@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 - AttachEase Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div class="container">
+    <h2 class="mb-16">管理后台</h2>
+    <div class="admin-tabs">
+      <div class="admin-tab active" id="tabProducts" onclick="switchTab('products')">商品管理</div>
+      <div class="admin-tab" id="tabUsers" onclick="switchTab('users')">用户管理</div>
+    </div>
+    <div id="productsPanel">
+      <div class="flex-between mb-16">
+        <span id="productStats"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>ID</th><th>标题</th><th>价格</th><th>分类</th><th>卖家</th><th>状态</th><th>发布时间</th><th>操作</th></tr></thead>
+          <tbody id="productsTable"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="usersPanel" class="hidden">
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>ID</th><th>昵称</th><th>手机号</th><th>角色</th><th>信用分</th><th>注册时间</th></tr></thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    if (!auth.requireAuth()) throw new Error('redirect');
+    if (!auth.requireAdmin()) throw new Error('redirect');
+    $('#app').innerHTML = renderNavbar();
+
+    function switchTab(tab) {
+      const isProducts = tab === 'products';
+      $('#tabProducts').classList.toggle('active', isProducts);
+      $('#tabUsers').classList.toggle('active', !isProducts);
+      $('#productsPanel').classList.toggle('hidden', !isProducts);
+      $('#usersPanel').classList.toggle('hidden', isProducts);
+      if (!isProducts) loadUsers();
+    }
+
+    async function loadProducts() {
+      try {
+        const list = await API.adminProducts();
+        const pending = list.filter(p => p.status === 'pending').length;
+        const sold = list.filter(p => p.sold).length;
+        $('#productStats').textContent = `共 ${list.length} 件 · 待审核 ${pending} · 已售出 ${sold}`;
+        $('#productsTable').innerHTML = list.map(p => `
+          <tr>
+            <td>${p.id}</td>
+            <td>${escapeHtml(p.title)}</td>
+            <td style="color:var(--danger)">${formatPrice(p.price)}</td>
+            <td>${escapeHtml(p.category)}</td>
+            <td>${escapeHtml(p.sellerName)}</td>
+            <td><span class="status-badge status-${p.status}">${p.sold ? '已售出' : ({pending:'待审核',approved:'已通过',rejected:'已拒绝'}[p.status]||p.status)}</span></td>
+            <td>${formatTime(p.createdAt)}</td>
+            <td>
+              ${p.status === 'pending' ? `<button class="btn btn-success" style="padding:4px 8px" onclick="audit(${p.id},'approved')">通过</button> <button class="btn btn-danger" style="padding:4px 8px" onclick="audit(${p.id},'rejected')">拒绝</button>` : ''}
+              <button class="btn btn-outline" style="padding:4px 8px" onclick="del(${p.id})">删除</button>
+            </td>
+          </tr>`).join('');
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function loadUsers() {
+      try {
+        const list = await API.adminUsers();
+        $('#usersTable').innerHTML = list.map(u => `
+          <tr>
+            <td>${u.id}</td>
+            <td>${escapeHtml(u.name)}</td>
+            <td>${u.phone}</td>
+            <td><span class="status-badge ${u.role==='admin'?'status-approved':''}">${u.role==='admin'?'管理员':'普通用户'}</span></td>
+            <td>${u.credit}</td>
+            <td>${formatTime(u.createdAt)}</td>
+          </tr>`).join('');
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function audit(id, status) {
+      try {
+        await API.updateProduct(id, { status });
+        toast(status === 'approved' ? '已通过审核' : '已拒绝', 'success');
+        loadProducts();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function del(id) {
+      if (!confirm('确认删除该商品？')) return;
+      try {
+        await API.deleteProduct(id);
+        toast('已删除', 'success');
+        loadProducts();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>

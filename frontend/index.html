@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>首页 - AttachEase Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div class="container">
+    <div class="categories" id="categories"></div>
+    <div class="flex-between mb-16">
+      <h2 id="listTitle">全部商品</h2>
+      <select class="form-select" id="sortSelect" style="width:auto" onchange="loadProducts()">
+        <option value="newest">最新发布</option>
+        <option value="price-asc">价格从低到高</option>
+        <option value="price-desc">价格从高到低</option>
+      </select>
+    </div>
+    <div class="product-grid" id="productGrid"></div>
+  </div>
+  <div id="tabbar"></div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    // 必须登录才能访问
+    if (!auth.requireAuth()) throw new Error('redirect');
+
+    const CATEGORIES = ['全部', '数码', '家居', '服饰', '图书', '运动', '其他'];
+    let currentCategory = getQuery('category') || '全部';
+    let currentSearch = getQuery('search') || '';
+
+    // 渲染导航和 Tab 栏
+    $('#app').innerHTML = renderNavbar();
+    $('#tabbar').innerHTML = renderTabbar('home');
+    if (currentSearch) $('#navSearch').value = currentSearch;
+
+    // 渲染分类
+    $('#categories').innerHTML = CATEGORIES.map(c =>
+      `<div class="category-tag ${c === currentCategory ? 'active' : ''}" onclick="selectCategory('${c}')">${c}</div>`
+    ).join('');
+
+    function selectCategory(c) {
+      currentCategory = c;
+      $$('.category-tag').forEach((el, i) => el.classList.toggle('active', CATEGORIES[i] === c));
+      loadProducts();
+    }
+
+    async function loadProducts() {
+      const sort = $('#sortSelect').value;
+      try {
+        const params = { sort };
+        if (currentCategory !== '全部') params.category = currentCategory;
+        if (currentSearch) params.search = currentSearch;
+        const list = await API.listProducts(params);
+        $('#listTitle').textContent = currentSearch ? `搜索"${currentSearch}"` : currentCategory;
+        $('#productGrid').innerHTML = list.length
+          ? list.map(productCard).join('')
+          : '<div class="empty"><div class="empty-icon">📦</div>暂无商品</div>';
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>

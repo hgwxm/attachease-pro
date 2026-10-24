@@ -1,23 +1,19 @@
-# Windows
-Thumbs.db
-Desktop.ini
-$RECYCLE.BIN/
+# 依赖
+node_modules/
+package-lock.json
 
-# macOS
-.DS_Store
-
-# Editor
+# 编辑器/工具
+.opencode/
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# Node
-node_modules/
-npm-debug.log*
-yarn-error.log*
-
-# 临时/辅助脚本
+# 日志
 *.log
-readlog.js
-verify.js
+npm-debug.log*
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 临时
+*.tmp

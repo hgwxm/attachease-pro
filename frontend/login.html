@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - AttachEase Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <div class="login-title">AttachEase Pro</div>
+      <div class="login-subtitle">二手好物 · 担保交易</div>
+
+      <div class="login-tabs">
+        <div class="login-tab active" id="tabLogin" onclick="switchTab('login')">登录</div>
+        <div class="login-tab" id="tabRegister" onclick="switchTab('register')">注册</div>
+      </div>
+
+      <!-- 登录表单 -->
+      <form id="loginForm" onsubmit="return doLogin(event)">
+        <div class="form-group">
+          <label class="form-label">手机号</label>
+          <input class="form-input" id="loginPhone" placeholder="请输入手机号" maxlength="11">
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input class="form-input" id="loginPassword" type="password" placeholder="请输入密码">
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" type="submit">登 录</button>
+        <div class="login-tip">
+          测试账号：<br>
+          普通用户 13800138000 / 123456<br>
+          管理员 &nbsp;&nbsp;13900139000 / admin123
+        </div>
+      </form>
+
+      <!-- 注册表单 -->
+      <form id="registerForm" onsubmit="return doRegister(event)" class="hidden">
+        <div class="form-group">
+          <label class="form-label">手机号</label>
+          <input class="form-input" id="regPhone" placeholder="请输入手机号" maxlength="11">
+        </div>
+        <div class="form-group">
+          <label class="form-label">昵称</label>
+          <input class="form-input" id="regName" placeholder="给自己起个昵称">
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input class="form-input" id="regPassword" type="password" placeholder="设置密码">
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" type="submit">注 册</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    // 已登录直接跳首页
+    if (auth.getToken()) location.href = 'index.html';
+
+    function switchTab(tab) {
+      const isLogin = tab === 'login';
+      $('#tabLogin').classList.toggle('active', isLogin);
+      $('#tabRegister').classList.toggle('active', !isLogin);
+      $('#loginForm').classList.toggle('hidden', !isLogin);
+      $('#registerForm').classList.toggle('hidden', isLogin);
+    }
+
+    async function doLogin(e) {
+      e.preventDefault();
+      const phone = $('#loginPhone').value.trim();
+      const password = $('#loginPassword').value;
+      if (!phone || !password) return toast('请填写手机号和密码', 'error');
+      try {
+        const { token, user } = await API.login(phone, password);
+        auth.setAuth(token, user);
+        toast('登录成功', 'success');
+        setTimeout(() => location.href = 'index.html', 600);
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+      return false;
+    }
+
+    async function doRegister(e) {
+      e.preventDefault();
+      const phone = $('#regPhone').value.trim();
+      const password = $('#regPassword').value;
+      const name = $('#regName').value.trim();
+      if (!phone || !password) return toast('请填写手机号和密码', 'error');
+      try {
+        const { token, user } = await API.register(phone, password, name);
+        auth.setAuth(token, user);
+        toast('注册成功', 'success');
+        setTimeout(() => location.href = 'index.html', 600);
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+      return false;
+    }
+  </script>
+</body>
+</html>
